@@ -25,6 +25,14 @@ document.addEventListener("DOMContentLoaded", () => {
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          ${details.participants.length > 0 ? `<div class="participants">
+              <strong>Participants:</strong>
+              <ul class="participants-list">
+                ${details.participants.map(p =>
+                  `<li>${p} <button class="remove-participant" data-activity="${name}" data-email="${p}" title="Remove">&times;</button></li>`
+                ).join("")}
+              </ul>
+            </div>` : ""}
         `;
 
         activitiesList.appendChild(activityCard);
@@ -78,6 +86,29 @@ document.addEventListener("DOMContentLoaded", () => {
       messageDiv.className = "error";
       messageDiv.classList.remove("hidden");
       console.error("Error signing up:", error);
+    }
+  });
+
+  // click delegation for removal buttons
+  activitiesList.addEventListener("click", async (event) => {
+    if (event.target.matches(".remove-participant")) {
+      const activity = event.target.dataset.activity;
+      const email = event.target.dataset.email;
+      try {
+        const resp = await fetch(
+          `/activities/${encodeURIComponent(activity)}/participants?email=${encodeURIComponent(email)}`,
+          { method: "DELETE" }
+        );
+        const result = await resp.json();
+        if (resp.ok) {
+          // refresh activities to update UI
+          fetchActivities();
+        } else {
+          console.error("Failed to remove participant", result);
+        }
+      } catch (err) {
+        console.error("Error removing participant", err);
+      }
     }
   });
 
